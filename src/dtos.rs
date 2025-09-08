@@ -1,8 +1,7 @@
+use crate::models::*;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use validator::Validate;
-
-use crate::models::{ReceiveFileDetails, SendFileDetails, User};
+use validator::{Validate, ValidationError};
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
 pub struct RegisterUserDto {
@@ -113,6 +112,43 @@ pub struct NamedUpdateDto {
     pub name: String,
 }
 
+#[derive(Debug, Default, Clone, Serialize, Deserialize, Validate)]
+pub struct UserPasswordUpdateDto {
+    #[validate(length(min = 8, message = "Password must be at least 8 characters long"))]
+    pub new_password: String,
+    #[validate(must_match(other = "new_password", message = "Passwords do not match"))]
+    pub new_password_confirm: String,
+    #[validate(length(min = 8, message = "Old password must be at least 8 characters long"))]
+    pub old_password: String,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
+pub struct SearchQueryByEmailDto {
+    #[validate(length(min = 1, message = "Query is required"))]
+    pub query: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FilterEmailDto {
+    pub email: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct EmailListResponseDto {
+    pub status: String,
+    pub emails: Vec<String>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
+pub struct FileUploadDto {
+    #[validate(email(message = "Invalid email"))]
+    pub recipient_email: String,
+    #[validate(length(min = 8, message = "Password must be at least 8 characters long"))]
+    pub password: String,
+    #[validate(custom(function = "validate_expiration_date"))]
+    pub expiration_date: String,
+}
+
 impl FilterUserDto {
     pub fn filter_user(user: &User) -> Self {
         Self {
@@ -178,4 +214,40 @@ impl UserReceiveFileDto {
             created_at,
         }
     }
+}
+
+impl FilterEmailDto {
+    pub fn filter_email(user: &User) -> Self {
+        FilterEmailDto {
+            email: user.email.to_owned(),
+        }
+    }
+
+    pub fn filter_emails(users: &[User]) -> Vec<FilterEmailDto> {
+        users.iter().map(FilterEmailDto::filter_email).collect()
+    }
+}
+
+fn validate_expiration_date(expiration_date: &str) -> Result<(), ValidationError> {
+    if expiration_date.is_empty() {
+        let mut error = ValidationError::new("expiration date required");
+        error.message = Some("Expiration date is required.".into());
+        return Err(error);
+    }
+
+    let parsed_date = DateTime::parse_from_rfc3339(expiration_date).map_err(|_| {
+        let mut error = ValidationError::new("invalid date format");
+        error.message =
+            Some("Invalid date format. Expected format is YYYY-MM-DDTHH:MM:ssssssZ.".into());
+        error
+    })?;
+
+    let now = Utc::now();
+    if parsed_date <= now {
+        let mut error = ValidationError::new("expiration date future");
+        error.message = Some("Expiration date must be in the future.".into());
+        return Err(error);
+    }
+
+    Ok(())
 }
