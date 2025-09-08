@@ -39,6 +39,15 @@ pub struct ShareLink {
 pub struct SendFileDetails {
     pub file_id: Uuid,
     pub file_name: String,
+    pub recipient_email: String,
+    pub expiration_date: Option<DateTime<Utc>>,
+    pub created_at: Option<DateTime<Utc>>,
+}
+
+#[derive(sqlx::FromRow)]
+pub struct ReceiveFileDetails {
+    pub file_id: Uuid,
+    pub file_name: String,
     pub sender_email: String,
     pub expiration_date: Option<DateTime<Utc>>,
     pub created_at: Option<DateTime<Utc>>,
