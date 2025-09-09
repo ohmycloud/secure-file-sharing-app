@@ -1,4 +1,4 @@
-use argon2::{Argon2, PasswordHasher, password_hash::SaltString};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier, password_hash::SaltString};
 use rand::rngs::OsRng;
 
 use crate::error::ErrorMessage;
@@ -22,4 +22,21 @@ pub fn hash(password: impl Into<String>) -> Result<String, ErrorMessage> {
         .to_string();
 
     Ok(hash_password)
+}
+
+pub fn compare(password: &str, hashed_password: &str) -> Result<bool, ErrorMessage> {
+    if password.is_empty() {
+        return Err(ErrorMessage::EmptyPassword);
+    }
+
+    if password.len() > MAX_PASSWORD_LENGTH {
+        return Err(ErrorMessage::ExceededMaxPasswordLength(MAX_PASSWORD_LENGTH));
+    }
+
+    let parsed_hash = PasswordHash::new(hashed_password).map_err(|_| ErrorMessage::HashingError)?;
+    let password_matched = Argon2::default()
+        .verify_password(password.as_bytes(), &parsed_hash)
+        .map_or(false, |_| true);
+
+    Ok(password_matched)
 }
