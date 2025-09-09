@@ -26,7 +26,7 @@ pub struct File {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, sqlx::FromRow, sqlx::Type)]
-pub struct ShareLink {
+pub struct SharedLink {
     pub id: Uuid,
     pub file_id: Option<Uuid>,
     pub recipient_user_id: Option<Uuid>,
@@ -36,7 +36,7 @@ pub struct ShareLink {
 }
 
 #[derive(sqlx::FromRow)]
-pub struct SendFileDetails {
+pub struct SentFileDetails {
     pub file_id: Uuid,
     pub file_name: String,
     pub recipient_email: String,

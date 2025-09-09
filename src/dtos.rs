@@ -163,7 +163,7 @@ impl FilterUserDto {
 }
 
 impl UserSendFileDto {
-    pub fn filter_send_user_file(file_data: &SendFileDetails) -> Self {
+    pub fn filter_send_user_file(file_data: &SentFileDetails) -> Self {
         Self {
             file_id: file_data.file_id.to_string(),
             file_name: file_data.file_name.to_owned(),
@@ -173,7 +173,7 @@ impl UserSendFileDto {
         }
     }
 
-    pub fn filter_send_user_files(user: &[SendFileDetails]) -> Vec<UserSendFileDto> {
+    pub fn filter_send_user_files(user: &[SentFileDetails]) -> Vec<UserSendFileDto> {
         user.iter()
             .map(UserSendFileDto::filter_send_user_file)
             .collect()
