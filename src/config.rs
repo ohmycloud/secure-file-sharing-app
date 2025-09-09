@@ -11,7 +11,7 @@ pub struct Config {
 impl Config {
     pub fn init() -> Self {
         let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-        let jwt_secret = env::var("JWT_SECRET").expect("JWT_SECRET must be set");
+        let jwt_secret = env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
         let jwt_maxage = env::var("JWT_MAXAGE")
             .expect("JWT_MAXAGE must be set")
             .parse::<i64>()
