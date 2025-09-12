@@ -1,14 +1,19 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json, http::StatusCode, response::IntoResponse};
+use axum::{
+    Extension, Json,
+    http::{HeaderMap, StatusCode, header},
+    response::IntoResponse,
+};
+use axum_extra::extract::cookie::Cookie;
 use validator::Validate;
 
 use crate::{
     AppState,
     db::UserExt,
-    dtos::{RegisterUserDto, Response},
+    dtos::{LoginUserDto, RegisterUserDto, Response, UserLoginResponseDto},
     error::{ErrorMessage, HttpError},
-    utils::{keys, password},
+    utils::{keys, password, token},
 };
 
 pub async fn register(
@@ -47,5 +52,56 @@ pub async fn register(
             }
         }
         Err(err) => Err(HttpError::server_error(err.to_string())),
+    }
+}
+
+pub async fn login(
+    Extension(app_state): Extension<Arc<AppState>>,
+    Json(body): Json<LoginUserDto>,
+) -> Result<impl IntoResponse, HttpError> {
+    body.validate()
+        .map_err(|err| HttpError::bad_request(err.to_string()))?;
+    let user = app_state
+        .db_client
+        .get_user(None, None, Some(body.email.as_str()))
+        .await
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+
+    let user = user.ok_or(HttpError::bad_request(
+        ErrorMessage::WrongCredentials.to_string(),
+    ))?;
+
+    let password_matched = password::compare(&body.password, &user.password)
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+
+    if password_matched {
+        let token = token::create_token(
+            &user.id.to_string(),
+            &app_state.env.jwt_secret.as_bytes(),
+            app_state.env.jwt_maxage,
+        )
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+
+        let cookie_duration = time::Duration::minutes(app_state.env.jwt_maxage * 60);
+        let cookie = Cookie::build(("token", token.clone()))
+            .path("/")
+            .max_age(cookie_duration)
+            .http_only(true)
+            .build();
+        let response = Json(UserLoginResponseDto {
+            status: "successful".to_string(),
+            token,
+        });
+        let mut headers = HeaderMap::new();
+
+        headers.append(header::SET_COOKIE, cookie.to_string().parse().unwrap());
+        let mut response = response.into_response();
+        response.headers_mut().extend(headers);
+
+        Ok(response)
+    } else {
+        Err(HttpError::bad_request(
+            ErrorMessage::WrongCredentials.to_string(),
+        ))
     }
 }

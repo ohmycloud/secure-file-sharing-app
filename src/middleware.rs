@@ -8,7 +8,7 @@ use crate::{
     db::UserExt,
     error::{ErrorMessage, HttpError},
     models::User,
-    utils::decode_token,
+    utils::token,
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -41,7 +41,7 @@ pub async fn auth(
     let token = cookies
         .ok_or_else(|| HttpError::unauthorized(ErrorMessage::TokenNotProvided.to_string()))?;
 
-    let token_details = match decode_token(token, app_state.env.jwt_secret.as_bytes()) {
+    let token_details = match token::decode_token(token, app_state.env.jwt_secret.as_bytes()) {
         Ok(token_details) => token_details,
         Err(_) => {
             return Err(HttpError::unauthorized(
