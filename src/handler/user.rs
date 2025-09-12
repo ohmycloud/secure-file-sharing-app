@@ -16,6 +16,20 @@ use crate::{
     utils::password,
 };
 
+pub async fn get_me(
+    Extension(_app_state): Extension<Arc<AppState>>,
+    Extension(middleware): Extension<JwtAuthMiddleware>,
+) -> Result<impl IntoResponse, HttpError> {
+    let filtered_user = FilterUserDto::filter_user(&middleware.user);
+    let response = UserResponseDto {
+        status: "successful".to_string(),
+        data: UserData {
+            user: filtered_user,
+        },
+    };
+    Ok(Json(response))
+}
+
 pub async fn update_user_name(
     Extension(app_state): Extension<Arc<AppState>>,
     Extension(middleware): Extension<JwtAuthMiddleware>,
