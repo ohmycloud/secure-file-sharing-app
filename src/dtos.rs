@@ -149,6 +149,14 @@ pub struct FileUploadDto {
     pub expiration_date: String,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]
+pub struct RetrieveFileDto {
+    #[validate(length(min = 1, message = "Shared ID must not be empty"))]
+    pub shared_id: String,
+    #[validate(length(min = 1, message = "Password must not be empty"))]
+    pub password: String,
+}
+
 impl FilterUserDto {
     pub fn filter_user(user: &User) -> Self {
         Self {
