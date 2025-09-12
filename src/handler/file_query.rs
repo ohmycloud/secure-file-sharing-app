@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json, extract::Query, response::IntoResponse};
+use axum::{Extension, Json, Router, extract::Query, response::IntoResponse, routing::get};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -14,6 +14,12 @@ use crate::{
     error::HttpError,
     middleware::JwtAuthMiddleware,
 };
+
+pub fn get_file_list_handler() -> Router {
+    Router::new()
+        .route("/send", get(get_user_shared_files))
+        .route("/receive", get(get_receive_shared_files))
+}
 
 pub async fn get_user_shared_files(
     Query(query_params): Query<RequestQueryDto>,
