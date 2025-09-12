@@ -1,11 +1,12 @@
 use std::{fs, path::PathBuf, sync::Arc};
 
 use axum::{
-    Extension, Json,
+    Extension, Json, Router,
     body::Body,
     extract::Multipart,
     http::StatusCode,
     response::{IntoResponse, Response},
+    routing::post,
 };
 use base64::{Engine, prelude::BASE64_STANDARD};
 use chrono::{DateTime, Utc};
@@ -24,6 +25,12 @@ use crate::{
     middleware::JwtAuthMiddleware,
     utils::{decrypt, encrypt, password},
 };
+
+pub fn file_handle() -> Router {
+    Router::new()
+        .route("/upload", post(upload_file))
+        .route("/register", post(retrieve_file))
+}
 
 pub async fn upload_file(
     Extension(app_state): Extension<Arc<AppState>>,
