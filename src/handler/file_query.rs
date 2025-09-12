@@ -7,7 +7,10 @@ use validator::Validate;
 use crate::{
     AppState,
     db::UserExt,
-    dtos::{RequestQueryDto, UserSendFileDto, UserSendFileListResponseDto},
+    dtos::{
+        RequestQueryDto, UserReceiveFileDto, UserReceiveFileListResponseDto, UserSendFileDto,
+        UserSendFileListResponseDto,
+    },
     error::HttpError,
     middleware::JwtAuthMiddleware,
 };
@@ -37,5 +40,34 @@ pub async fn get_user_shared_files(
         files: filter_send_files,
         results: total_count,
     };
+    Ok(Json(response))
+}
+
+pub async fn get_receive_shared_files(
+    Query(query_params): Query<RequestQueryDto>,
+    Extension(app_state): Extension<Arc<AppState>>,
+    Extension(middleware): Extension<JwtAuthMiddleware>,
+) -> Result<impl IntoResponse, HttpError> {
+    query_params
+        .validate()
+        .map_err(|err| HttpError::bad_request(err.to_string()))?;
+    let user = &middleware.user;
+    let page = query_params.page.unwrap_or(1);
+    let limit = query_params.limit.unwrap_or(10);
+    let user_id = Uuid::parse_str(&user.id.to_string()).unwrap();
+
+    let (receive_files, total_count) = app_state
+        .db_client
+        .get_receive_files(user_id.clone(), page as u32, limit)
+        .await
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+
+    let filter_receive_files = UserReceiveFileDto::filter_receive_user_files(&receive_files);
+    let response = UserReceiveFileListResponseDto {
+        status: "successful".to_string(),
+        files: filter_receive_files,
+        results: total_count,
+    };
+
     Ok(Json(response))
 }
