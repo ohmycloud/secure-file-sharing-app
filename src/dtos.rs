@@ -136,7 +136,7 @@ pub struct FilterEmailDto {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct EmailListResponseDto {
     pub status: String,
-    pub emails: Vec<String>,
+    pub emails: Vec<FilterEmailDto>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, Validate)]

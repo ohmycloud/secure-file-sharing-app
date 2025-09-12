@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use axum::{Extension, Json, response::IntoResponse};
+use axum::{Extension, Json, extract::Query, response::IntoResponse};
 use uuid::Uuid;
 use validator::Validate;
 
@@ -8,7 +8,8 @@ use crate::{
     AppState,
     db::UserExt,
     dtos::{
-        FilterUserDto, NamedUpdateDto, Response, UserData, UserPasswordUpdateDto, UserResponseDto,
+        EmailListResponseDto, FilterEmailDto, FilterUserDto, NamedUpdateDto, Response,
+        SearchQueryByEmailDto, UserData, UserPasswordUpdateDto, UserResponseDto,
     },
     error::{ErrorMessage, HttpError},
     middleware::JwtAuthMiddleware,
@@ -81,5 +82,29 @@ pub async fn update_user_password(
         message: "Password updated successfully".to_string(),
     };
 
+    Ok(Json(response))
+}
+
+pub async fn search_by_email(
+    Query(params): Query<SearchQueryByEmailDto>,
+    Extension(app_state): Extension<Arc<AppState>>,
+    Extension(user): Extension<JwtAuthMiddleware>,
+) -> Result<impl IntoResponse, HttpError> {
+    params
+        .validate()
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+    let query_pattern = format!("%{}%", params.query);
+    let user_id = Uuid::parse_str(&user.user.id.to_string()).unwrap();
+    let users = app_state
+        .db_client
+        .search_by_email(user_id.clone(), query_pattern.clone())
+        .await
+        .map_err(|err| HttpError::server_error(err.to_string()))?;
+
+    let filtered_email = FilterEmailDto::filter_emails(&users);
+    let response = EmailListResponseDto {
+        status: "successful".to_string(),
+        emails: filtered_email,
+    };
     Ok(Json(response))
 }
