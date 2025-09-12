@@ -1,9 +1,10 @@
 use std::sync::Arc;
 
 use axum::{
-    Extension, Json,
+    Extension, Json, Router,
     http::{HeaderMap, StatusCode, header},
     response::IntoResponse,
+    routing::post,
 };
 use axum_extra::extract::cookie::Cookie;
 use validator::Validate;
@@ -15,6 +16,12 @@ use crate::{
     error::{ErrorMessage, HttpError},
     utils::{keys, password, token},
 };
+
+pub fn auth_handler() -> Router {
+    Router::new()
+        .route("/register", post(register))
+        .route("/login", post(login))
+}
 
 pub async fn register(
     Extension(app_state): Extension<Arc<AppState>>,
