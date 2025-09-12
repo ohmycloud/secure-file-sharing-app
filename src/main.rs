@@ -1,9 +1,8 @@
-use axum::{
-    Router,
-    http::{
-        HeaderValue, Method,
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    },
+use std::sync::Arc;
+
+use axum::http::{
+    HeaderValue, Method,
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
 };
 use sqlx::postgres::PgPoolOptions;
 use tokio_cron_scheduler::{Job, JobScheduler};
@@ -13,6 +12,7 @@ use tracing_subscriber::filter::LevelFilter;
 use crate::{
     config::Config,
     db::{DbClient, UserExt},
+    router::create_router,
 };
 
 mod config;
@@ -86,7 +86,7 @@ async fn main() {
         sched.start().await.unwrap();
     });
 
-    let app = Router::new().layer(cors.clone()).with_state(app_state);
+    let app = create_router(Arc::new(app_state.clone())).layer(cors.clone());
     println!(
         "{}",
         format!("🚀 Server is running on http://localhost:{}", config.port)
