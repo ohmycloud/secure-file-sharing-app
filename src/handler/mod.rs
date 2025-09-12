@@ -1,4 +1,4 @@
-mod auth;
-mod file;
-mod file_query;
-mod user;
+pub mod auth;
+pub mod file;
+pub mod file_query;
+pub mod user;

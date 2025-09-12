@@ -22,6 +22,7 @@ mod error;
 mod handler;
 mod middleware;
 mod models;
+mod router;
 mod utils;
 
 #[derive(Debug, Clone)]
