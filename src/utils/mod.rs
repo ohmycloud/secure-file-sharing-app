@@ -1,7 +1,7 @@
 mod decrypt;
 mod encrypt;
-mod keys;
-mod password;
+pub mod keys;
+pub mod password;
 mod token;
 
 pub use token::*;

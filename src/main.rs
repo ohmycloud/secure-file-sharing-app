@@ -19,6 +19,7 @@ mod config;
 mod db;
 mod dtos;
 mod error;
+mod handler;
 mod middleware;
 mod models;
 mod utils;
