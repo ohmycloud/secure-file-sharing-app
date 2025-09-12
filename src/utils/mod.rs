@@ -1,3 +1,4 @@
+mod decrypt;
 mod encrypt;
 mod keys;
 mod password;
